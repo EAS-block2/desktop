@@ -1,9 +1,9 @@
 use reqwest;
 use std::{process::*, str, thread, time::Duration};
 fn main() {
-    let mut active = false;
+    let mut active: bool;
     let mut lastactive = false;
-    let mut browser_id = 0;
+    let mut proc_id = 0;
     let mut lbody: String= String::new();
     println!("user is: {}",get_user());
     let url = format!("http://easrvr:8000/pc/{}", get_user());
@@ -19,20 +19,22 @@ fn main() {
         _ => active = true,
     }
     println!("active:{}, body: {}", &active, &body);
-    if body != lbody && browser_id != 0{
+    if body != lbody && proc_id != 0{
         println!("Here I go Killing again!");
         if cfg!(target_os = "windows"){Command::new("taskkill")
-        .arg("/PID").arg(browser_id.to_string()).spawn().unwrap();}
-        else {Command::new("kill").arg(browser_id.to_string())
+        .arg("/F").arg("/PID").arg(proc_id.to_string()).spawn().unwrap();}
+
+        else {Command::new("kill").arg("-KILL").arg(proc_id.to_string())
         .spawn().unwrap();}
-        browser_id = 0;
+        proc_id = 0;
         thread::sleep(Duration::from_millis(200));
     }
     if active && (!lastactive || (body != lbody)){
         lastactive = true;
-        browser_id = Command::new("firefox")
-            .arg("--kiosk")
-            .arg(&body).spawn().unwrap().id();
+        if cfg!(target_os = "windows"){proc_id = Command::new("C:\\Program Files\\EAS\\display.exe")
+        .arg(&body).spawn().unwrap().id();}
+        else {proc_id = Command::new("/usr/bin/python3")
+        .arg("/etc/EAS/display.py").arg(&body).spawn().unwrap().id();}
     }
     else if !active && lastactive{
         lastactive = false;
@@ -41,7 +43,7 @@ fn main() {
         thread::sleep(Duration::from_secs(2));
     }
     lbody = body;
-    println!("PID is: {}",&browser_id);
+    println!("PID is: {}",&proc_id);
 }}
 
 fn get_user() -> String{
