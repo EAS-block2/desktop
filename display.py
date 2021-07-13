@@ -1,7 +1,7 @@
 import pygame
 import sys
 from pygame.locals import *
-
+import msvcrt
 
 alarm = sys.argv[1]
 black = (0,0,0)
@@ -13,7 +13,6 @@ def text_objects(text, font):
     textSurface = font.render(text, True, black)
     return textSurface, textSurface.get_rect()
 def GameLoop(alarm):
-    global Emergency
     pygame.init()
     display_width = pygame.display.list_modes()[0][0]
     display_height = pygame.display.list_modes()[0][1]
@@ -49,7 +48,7 @@ def GameLoop(alarm):
         pygame.time.wait(500)
 
         for event in pygame.event.get():
-            if pygame.key.get_pressed()[pygame.K_RETURN]:
+            if pygame.key.get_pressed()[pygame.K_SPACE]:
                 pygame.quit()
                 break
 GameLoop(alarm)

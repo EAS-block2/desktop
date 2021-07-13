@@ -1,9 +1,10 @@
 use reqwest;
-use std::{process::*, str, thread, time::Duration};
+use std::{process::*, str, thread, time::Duration, io::Write};
+
 fn main() {
     let mut active: bool;
     let mut lastactive = false;
-    let mut proc_id = 0;
+    let mut pyproc: Option<std::process::ChildStdin> = None;
     let mut lbody: String= String::new();
     println!("user is: {}",get_user());
     let url = format!("http://easrvr:8000/pc/{}", get_user());
@@ -19,22 +20,20 @@ fn main() {
         _ => active = true,
     }
     println!("active:{}, body: {}", &active, &body);
-    if body != lbody && proc_id != 0{
+    if body != lbody && !pyproc.is_none(){ 
         println!("Here I go Killing again!");
-        if cfg!(target_os = "windows"){Command::new("taskkill")
-        .arg("/F").arg("/PID").arg(proc_id.to_string()).spawn().unwrap();}
-
-        else {Command::new("kill").arg("-KILL").arg(proc_id.to_string())
-        .spawn().unwrap();}
-        proc_id = 0;
+        match pyproc.take(){
+            Some(mut i) => {i.write(b"test").unwrap();},
+            _ => {println!("Nothing to kill, that's weird");}
+        }
         thread::sleep(Duration::from_millis(200));
     }
     if active && (!lastactive || (body != lbody)){
         lastactive = true;
-        if cfg!(target_os = "windows"){proc_id = Command::new("C:\\Program Files\\EAS\\display.exe")
-        .arg(&body).spawn().unwrap().id();}
-        else {proc_id = Command::new("/usr/bin/python3")
-        .arg("/etc/EAS/display.py").arg(&body).spawn().unwrap().id();}
+        if cfg!(target_os = "windows"){pyproc = Command::new("C:\\Program Files\\EAS\\display.exe")
+        .arg(&body).spawn().unwrap().stdin;}
+        else {pyproc = Command::new("/usr/bin/python3")
+        .arg("/etc/EAS/display.py").arg(&body).spawn().unwrap().stdin;}
     }
     else if !active && lastactive{
         lastactive = false;
@@ -43,7 +42,6 @@ fn main() {
         thread::sleep(Duration::from_secs(2));
     }
     lbody = body;
-    println!("PID is: {}",&proc_id);
 }}
 
 fn get_user() -> String{
