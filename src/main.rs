@@ -1,10 +1,9 @@
 use reqwest;
-use std::{process::*, str, thread, time::Duration, io::Write};
+use std::{process::*, str, thread, time::Duration};
 
 fn main() {
     let mut active: bool;
     let mut lastactive = false;
-    let mut pyproc: Option<std::process::ChildStdin> = None;
     let mut lbody: String= String::new();
     println!("user is: {}",get_user());
     let url = format!("http://easrvr:8000/pc/{}", get_user());
@@ -20,20 +19,13 @@ fn main() {
         _ => active = true,
     }
     println!("active:{}, body: {}", &active, &body);
-    if body != lbody && !pyproc.is_none(){ 
-        println!("Here I go Killing again!");
-        match pyproc.take(){
-            Some(mut i) => {i.write(b"test").unwrap();},
-            _ => {println!("Nothing to kill, that's weird");}
-        }
-        thread::sleep(Duration::from_millis(200));
-    }
+    thread::sleep(Duration::from_millis(200));
     if active && (!lastactive || (body != lbody)){
         lastactive = true;
-        if cfg!(target_os = "windows"){pyproc = Command::new("C:\\Program Files\\EAS\\display.exe")
-        .arg(&body).spawn().unwrap().stdin;}
-        else {pyproc = Command::new("/usr/bin/python3")
-        .arg("/etc/EAS/display.py").arg(&body).spawn().unwrap().stdin;}
+        if cfg!(target_os = "windows"){Command::new("C:\\Program Files\\EAS\\display.exe")
+        .arg(&body).spawn().unwrap();}
+        else {Command::new("/usr/bin/python3")
+        .arg("/etc/EAS/display.py").arg(&body).spawn().unwrap();}
     }
     else if !active && lastactive{
         lastactive = false;
